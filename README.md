@@ -54,10 +54,10 @@ El proyecto sigue las seis fases clásicas de CRISP-DM:
 ```text
 crispdm-data-mining-telco-churn/
 │
-├─ Entregable/                      # Reporte HTML final y recursos asociados (imágenes, estilos)
-├─ EDA_Telco+CRISP-DM.ipynb # Notebook principal con todo el flujo CRISP-DM
+├─ Entregable/                           # Reporte HTML final y recursos asociados (imágenes, estilos)
+├─ EDA_Telco+CRISP-DM.ipynb              # Notebook principal con todo el flujo CRISP-DM
 ├─ WA_Fn-UseC_-Telco-Customer-Churn.csv  # Dataset utilizado en el análisis
-├─ README.md                        # Descripción del proyecto
-├─ requirements                     # Dependencias del proyecto
-└─ .gitignore                       # Archivos ignorados por Git
+├─ README.md                             # Descripción del proyecto
+├─ requirements                          # Dependencias del proyecto
+└─ .gitignore                            # Archivos ignorados por Git
 
