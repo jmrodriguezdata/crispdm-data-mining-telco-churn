@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="es">
+
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRISP-DM · Churn en Telecomunicaciones</title>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+
+    <!-- Tipografía -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* =============================
+           VARIABLES DE DISEÑO PREMIUM
+           ============================= */
+        :root {
+            --bg1: #7FCFF7;   /* degradé más suave */
+            --bg2: #1A0F4F;
+
+            --panel: rgba(255, 255, 255, 0.92);
+            --ink: #243447;
+            --muted: #6f7c89;
+
+            --accent: #5C6DE8;
+            --accent2: #7048B8;
+            --accent3: #2dd4bf;
+            --accent4: #f59e0b;
+
+            --success: #22c55e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+            color: var(--ink);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* =============================
+           HEADER (Glass + sombra suave)
+           ============================= */
+        header {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(14px);
+            border-radius: 28px;
+            padding: 50px 30px;
+            text-align: center;
+            margin-bottom: 50px;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.22);
+            animation: slideDown 0.7s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 3.25em;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            -webkit-text-stroke: 0.3px rgba(0,0,0,0.05);
+        }
+
+        .subtitle {
+            font-size: 1.22em;
+            color: var(--muted);
+            letter-spacing: 0.2px;
+        }
+
+        /* =============================
+           NAVIGATION TABS (UI mejorada)
+           ============================= */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .tab-btn {
+            background: white;
+            border: none;
+            padding: 16px 42px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.13em;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            box-shadow: 0 5px 16px rgba(0,0,0,0.12);
+            transition: all 0.25s ease;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 26px rgba(0,0,0,0.20);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            color: white;
+            transform: scale(1.06);
+            box-shadow: 0 8px 26px rgba(0,0,0,0.28);
+        }
+
+        /* =============================
+           CARDS
+           ============================= */
+        .card {
+            background: white;
+            border-radius: 22px;
+            padding: 34px;
+            margin-bottom: 32px;
+            box-shadow: 0 18px 42px rgba(0,0,0,0.13);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.55s ease-out;
+        }
+
+        /* Fade-in */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.6s ease;
+        }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px);}
+            to   { opacity: 1; transform: translateY(0);}
+        }
+
+        /* =============================
+           TEXT HIERARCHY
+           ============================= */
+        .phase-header {
+            margin-bottom: 26px;
+        }
+
+        .phase-number {
+            font-size: 3.6em;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+        }
+
+        .phase-title {
+            font-size: 2.0em;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .phase-desc {
+            font-size: 1.05em;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* =============================
+           Highlight / Alerts
+           ============================= */
+        .highlight-box {
+            background: rgba(102, 126, 234, 0.12);
+            border-left: 6px solid var(--bg1);
+            padding: 22px;
+            border-radius: 16px;
+            margin: 28px 0;
+        }
+
+        .alert {
+            background: #fff7d9;
+            border-left: 5px solid #ffca3a;
+            padding: 18px;
+            border-radius: 14px;
+            margin-top: 28px;
+        }
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>📡 Data Mining: Churn en Telecomunicaciones</h1>
+        <p style="
+            margin-top:12px;
+            font-size:1.25em;
+            font-weight:800;
+            color:#11255b;
+            letter-spacing:0.6px;
+        ">
+            CRISP-DM · © Juan Miguel Rodríguez Trujillo
+        </p>
+    </header>
+
+    <!-- NAVIGATION -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="showTab('intro')">🏠 Introducción</button>
+        <button class="tab-btn" onclick="showTab('fase1')">💼 Fase I: Comprensión del Negocio</button>
+        <button class="tab-btn" onclick="showTab('fase2')">📊 Fase II – III: Data Understanding + EDA</button>
+        <button class="tab-btn" onclick="showTab('premodel')">💡 Insights Pre-Modelado</button>
+        <button class="tab-btn" onclick="showTab('fase4')">🧮 Fase IV: Modelado</button>
+        <button class="tab-btn" onclick="showTab('fase5')">✅ Fase V: Evaluación</button>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- ===================== INTRODUCCIÓN ======================= -->
+    <!-- ========================================================= -->
+
+    <div id="intro" class="tab-content active">
+        <div class="card">
+
+            <!-- Encabezado visual -->
+            <div class="phase-header">
+                <div class="phase-number">00</div>
+                <div class="phase-title">Introducción</div>
+                <div class="phase-desc">Visión general del proyecto y marco analítico</div>
+            </div>
+
+            <!-- Lede inicial -->
+            <p style="
+                font-size:1.18em; 
+                margin-bottom:30px; 
+                line-height:1.8;
+                text-align:justify;
+            ">
+                En un sector tan dinámico como el de las telecomunicaciones, comprender por qué un cliente 
+                decide cancelar su servicio resulta fundamental para sostener la competitividad. Esta 
+                introducción integra los primeros pasos de la metodología <strong>CRISP-DM</strong> para 
+                transformar datos operativos en <em>insights</em> estratégicos orientados a fortalecer la retención.
+            </p>
+
+            <!-- Objetivo general en bloque destacado -->
+            <div class="highlight-box" style="
+                margin-bottom:40px;
+                padding:25px;
+                border-radius:18px;
+            ">
+                <h3 style="font-size:1.3em; font-weight:700;">🎯 Objetivo General</h3>
+                <p style="line-height:1.7; margin-top:6px;">
+                    Construir una base analítica sólida que permita identificar patrones de comportamiento, 
+                    señales tempranas de abandono y generar insumos para modelos predictivos que apoyen 
+                    decisiones comerciales y operativas de alto impacto.
+                </p>
+            </div>
+
+            <!-- Descripción del Dataset -->
+            <h3 style="
+                margin-top:10px;
+                margin-bottom:18px;
+                font-size:1.35em;
+                font-weight:800;
+            ">📦 Descripción del Dataset</h3>
+
+            <div style="
+                background:linear-gradient(135deg, rgba(255,255,255,0.85), rgba(245,245,255,0.75));
+                border-radius:20px;
+                padding:26px 28px;
+                margin-bottom:30px;
+                box-shadow:0 8px 22px rgba(0,0,0,0.12);
+            ">
+                <p style="line-height:1.75; margin-bottom:12px;">
+                    Se utiliza el dataset <em>Telco Customer Churn</em>, que contiene información de 
+                    <strong>7.043 clientes</strong> y diversas variables asociadas a:
+                </p>
+
+                <ul style="
+                    line-height:1.8; 
+                    margin-left:22px; 
+                    margin-top:12px;
+                    font-size:1.05em;
+                ">
+                    <li>Características demográficas y socioeconómicas.</li>
+                    <li>Tipo de contrato y servicios contratados.</li>
+                    <li>Patrones de uso, facturación y método de pago.</li>
+                    <li>La variable objetivo <strong>Churn</strong> (abandono voluntario).</li>
+                </ul>
+            </div>
+
+            <!-- Stats con tarjetas PREMIUM INTERACTIVAS -->
+            <div class="stats-grid" style="
+                margin-top:10px;
+                display:flex;
+                justify-content:space-between;
+                align-items:stretch;
+                gap:22px;
+                flex-wrap:nowrap;   /* 🔥 Mantener SIEMPRE en una sola fila */
+            ">
+
+                <!-- CARD 1 -->
+                <div class="stat-card"
+                    style="
+                        flex:1;
+                        padding:28px;
+                        background:linear-gradient(135deg, rgba(180,210,255,0.65), rgba(230,240,255,0.9));
+                        border-radius:22px;
+                        color:black;
+                        box-shadow:0 8px 20px rgba(0,0,0,0.12);
+                        transition:all 0.25s ease;
+                        cursor:pointer;
+                    "
+                    onmouseover="this.style.transform='scale(1.05)'"
+                    onmouseout="this.style.transform='scale(1)'"
+                >
+                    <div class="stat-icon" style="font-size:2.1em; margin-bottom:6px;">👥</div>
+                    <div class="stat-value" style="font-size:2.2em; font-weight:800; color:black;">7,043</div>
+                    <div class="stat-label" style="color:#555; font-weight:600;">Clientes</div>
+                </div>
+
+                <!-- CARD 2 -->
+                <div class="stat-card"
+                    style="
+                        flex:1;
+                        padding:28px;
+                        background:linear-gradient(135deg, rgba(255,220,150,0.65), rgba(255,245,220,0.9));
+                        border-radius:22px;
+                        color:black;
+                        box-shadow:0 8px 20px rgba(0,0,0,0.12);
+                        transition:all 0.25s ease;
+                        cursor:pointer;
+                    "
+                    onmouseover="this.style.transform='scale(1.05)'"
+                    onmouseout="this.style.transform='scale(1)'"
+                >
+                    <div class="stat-icon" style="font-size:2.1em; margin-bottom:6px;">📊</div>
+                    <div class="stat-value" style="font-size:2.2em; font-weight:800; color:black;">21</div>
+                    <div class="stat-label" style="color:#555; font-weight:600;">Variables</div>
+                </div>
+
+                <!-- CARD 3 -->
+                <div class="stat-card"
+                    style="
+                        flex:1;
+                        padding:28px;
+                        background:linear-gradient(135deg, rgba(255,180,180,0.65), rgba(255,230,230,0.9));
+                        border-radius:22px;
+                        color:black;
+                        box-shadow:0 8px 20px rgba(0,0,0,0.12);
+                        transition:all 0.25s ease;
+                        cursor:pointer;
+                    "
+                    onmouseover="this.style.transform='scale(1.05)'"
+                    onmouseout="this.style.transform='scale(1)'"
+                >
+                    <div class="stat-icon" style="font-size:2em; margin-bottom:6px;">⚠️</div>
+                    <div class="stat-value" style="font-size:2.2em; font-weight:800; color:black;">26.6%</div>
+                    <div class="stat-label" style="color:#555; font-weight:600;">Churn Rate</div>
+                </div>
+
+            </div>
+
+            <!-- Alcance -->
+            <div class="highlight-box" style="
+                margin-top:40px;
+                border-left-color:var(--accent2);
+                padding:25px;
+                border-radius:18px;
+            ">
+                <h3 style="color:var(--accent2); font-weight:800;">💡 Alcance del Proyecto</h3>
+                <p style="line-height:1.75;">
+                    Este documento consolida los pasos iniciales del proceso CRISP-DM como fundamento 
+                    para las etapas avanzadas de modelado y evaluación. Las siguientes secciones integran 
+                    una visión estratégica del negocio, un análisis exploratorio completo y los primeros 
+                    hallazgos clave para la toma de decisiones.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- ===================== FASE I ============================ -->
+    <!-- ========================================================= -->
+
+    <div id="fase1" class="tab-content">
+        <div class="card">
+
+            <!-- Encabezado visual -->
+            <div class="phase-header">
+                <div class="phase-number">01</div>
+                <div class="phase-title">Comprensión del Negocio</div>
+                <div class="phase-desc">Business Understanding</div>
+            </div>
+
+            <!-- ========== BLOQUE 1: CONTEXTO GENERAL ========== -->
+            <div style="
+                background:linear-gradient(135deg, rgba(255,255,255,0.75), rgba(240,244,255,0.85));
+                padding:26px;
+                border-radius:20px;
+                box-shadow:0 8px 22px rgba(0,0,0,0.12);
+                margin-bottom:35px;
+                backdrop-filter: blur(4px);
+            ">
+                <h3 style="margin-bottom:12px; font-size:1.35em; font-weight:800;">🌐 Contexto del negocio</h3>
+                <p style="font-size:1.08em; line-height:1.75;">
+                    El sector de telecomunicaciones opera en un entorno altamente competitivo, caracterizado por 
+                    bajas barreras de cambio, márgenes ajustados y clientes cada vez más sensibles a la calidad 
+                    del servicio. En este contexto, el <strong>churn voluntario</strong> se convierte en un 
+                    determinante clave del desempeño comercial y financiero. Entender sus causas permite 
+                    priorizar inversiones, mejorar la retención y sostener el crecimiento.
+                </p>
+            </div>
+
+            <!-- ========== BLOQUE 2: PROPÓSITO ESTRATÉGICO ========== -->
+            <div class="highlight-box" style="
+                margin-bottom:32px;
+                border-left-color:var(--accent3);
+                background:rgba(230,255,245,0.85);
+                border-radius:18px;
+                backdrop-filter: blur(3px);
+            ">
+                <h3 style="font-weight:800; font-size:1.3em;">🎯 Propósito estratégico</h3>
+                <p style="line-height:1.7; font-size:1.05em; margin-top:8px;">
+                    Identificar los factores que influyen en la decisión de cancelar el servicio, anticipar 
+                    comportamientos de riesgo y orientar estrategias de retención con enfoque en eficiencia 
+                    comercial y maximización del valor del cliente.
+                </p>
+            </div>
+
+            <!-- ========== BLOQUE 3: DINÁMICAS CLAVE ========== -->
+            <div style="
+                background:linear-gradient(135deg, rgba(255,255,255,0.75), rgba(240,245,255,0.90));
+                padding:26px;
+                border-radius:20px;
+                box-shadow:0 8px 22px rgba(0,0,0,0.12);
+                margin-bottom:35px;
+            ">
+                <h3 style="margin-bottom:12px; font-size:1.3em; font-weight:800;">📌 Dinámicas clave del negocio</h3>
+                <ul style="line-height:1.9; margin-left:20px; font-size:1.05em;">
+                    <li><strong>Competencia intensa:</strong> amplia oferta de operadores y servicios sustitutos.</li>
+                    <li><strong>Altos costos de adquisición:</strong> captar nuevos clientes cuesta entre 5 y 7 veces 
+                        más que retener a uno existente.</li>
+                    <li><strong>Heterogeneidad del portafolio:</strong> perfiles de clientes variados en contrato, 
+                        facturación, uso y antigüedad.</li>
+                    <li><strong>Impacto financiero directo:</strong> variaciones mínimas en churn afectan sustancialmente 
+                        ingresos y estabilidad.</li>
+                </ul>
+            </div>
+
+            <!-- ========== BLOQUE 4: PREGUNTA CENTRAL ========== -->
+            <div class="highlight-box" style="
+                margin-bottom:32px;
+                border-left-color:var(--accent2);
+                background:rgba(245,240,255,0.85);
+                border-radius:18px;
+                backdrop-filter: blur(3px);
+            ">
+                <h3 style="color:var(--accent2); font-weight:800; font-size:1.3em;">🔍 Pregunta central del negocio</h3>
+                <p style="line-height:1.75; margin-top:8px; font-size:1.05em;">
+                    <strong>¿Qué características del cliente, del servicio y del comportamiento operativo explican la 
+                    probabilidad de abandono del servicio?</strong>
+                </p>
+                <p style="margin-top:10px; font-size:1.03em;">
+                    Responderla permite diseñar estrategias preventivas, segmentaciones accionables y planes de 
+                    intervención personalizados.
+                </p>
+            </div>
+
+            <!-- ========== BLOQUE 5: OBJETIVOS ESPECÍFICOS ========== -->
+            <div style="
+                background:linear-gradient(135deg, rgba(255,255,255,0.75), rgba(235,245,255,0.90));
+                padding:26px;
+                border-radius:20px;
+                box-shadow:0 8px 22px rgba(0,0,0,0.12);
+                margin-bottom:35px;
+            ">
+                <h3 style="margin-bottom:12px; font-size:1.3em; font-weight:800;">📈 Objetivos específicos</h3>
+                <ul style="line-height:1.9; margin-left:20px; font-size:1.05em;">
+                    <li>Identificar factores estructurales asociados al churn.</li>
+                    <li>Detectar señales tempranas de abandono basadas en comportamiento.</li>
+                    <li>Relacionar hallazgos del EDA con implicaciones estratégicas.</li>
+                    <li>Definir métricas de éxito alineadas a objetivos comerciales 
+                        (<em>recall</em> clase positiva, ROC-AUC, churn ajustado).</li>
+                </ul>
+            </div>
+
+            <!-- ========== BLOQUE 6: CIERRE EJECUTIVO ========== -->
+            <div class="alert" style="
+                margin-top:15px;
+                border-radius:18px;
+                padding:20px;
+                background:rgba(255,248,225,0.9);
+                backdrop-filter: blur(2px);
+            ">
+                <strong style="font-size:1.1em;">💡 Nota ejecutiva:</strong>
+                <p style="margin-top:8px; line-height:1.7; font-size:1.05em;">
+                    La comprensión del negocio define el rumbo del análisis. Los modelos predictivos solo generan valor 
+                    cuando responden a una necesidad estratégica clara y cuando sus métricas se traducen en impacto 
+                    comercial tangible.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- ========== ACORDEÓN PREMIUM · FASE II–III ================ -->
+    <!-- ========================================================= -->
+
+    <div id="fase2" class="tab-content">
+    <div class="card">
+
+        <!-- Encabezado visual -->
+        <div class="phase-header">
+            <div class="phase-number">02-03</div>
+            <div class="phase-title">Understanding Data & Exploratory Data Analysis</div>
+            <div class="phase-desc">Data Understanding & Preparation</div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- ========== INTRODUCCIÓN EJECUTIVA ======================== -->
+        <!-- ========================================================= -->
+
+        <div style="
+            background:rgba(255,255,255,0.75);
+            padding:24px;
+            border-radius:16px;
+            box-shadow:0 6px 18px rgba(0,0,0,0.12);
+            margin-bottom:32px;
+        ">
+            <h3 style="margin-bottom:10px;">📘 Overview general</h3>
+            <p style="font-size:1.05em; line-height:1.7;">
+                Esta fase consolida una visión analítica del comportamiento del churn mediante 
+                exploraciones categóricas, probabilísticas y numéricas. Su propósito es establecer
+                patrones previos al modelado, identificar señales tempranas de riesgo y fortalecer
+                la comprensión del dataset desde múltiples enfoques.
+            </p>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- ========== ACORDEÓN PREMIUM ============================= -->
+        <!-- ========================================================= -->
+
+        <style>
+            .accordion-section {
+                background:white;
+                border-radius:16px;
+                margin-bottom:18px;
+                box-shadow:0 8px 22px rgba(0,0,0,0.10);
+                overflow:hidden;
+            }
+            .accordion-header {
+                width:100%;
+                padding:20px 22px;
+                text-align:left;
+                font-size:1.2em;
+                font-weight:700;
+                cursor:pointer;
+                background:linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15));
+                border:none;
+                outline:none;
+                transition:0.3s;
+            }
+            .accordion-header:hover {
+                background:linear-gradient(135deg, rgba(102,126,234,0.25), rgba(118,75,162,0.25));
+            }
+            .accordion-header.active {
+                background:linear-gradient(135deg, var(--bg1), var(--bg2));
+                color:white;
+            }
+            .accordion-content {
+                max-height:0;
+                overflow:hidden;
+                transition:max-height 0.45s ease;
+                background:white;
+                padding:0 22px;
+            }
+        </style>
+
+        <script>
+            function toggleAccordion(button) {
+                const content = button.nextElementSibling;
+
+                document.querySelectorAll(".accordion-header").forEach(h => {
+                    if (h !== button) {
+                        h.classList.remove("active");
+                        h.nextElementSibling.style.maxHeight = null;
+                    }
+                });
+
+                button.classList.toggle("active");
+
+                if (button.classList.contains("active")) {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                } else {
+                    content.style.maxHeight = null;
+                }
+            }
+        </script>
+
+        <!-- ========================================================= -->
+        <!-- ========== ACORDEÓN ITEM 1 · DISTRIBUCIONES ============= -->
+        <!-- ========================================================= -->
+
+        <div class="accordion-section">
+            <button class="accordion-header" onclick="toggleAccordion(this)">
+                📊 Distribuciones de variables categóricas
+            </button>
+
+            <div class="accordion-content">
+
+                <p style="margin:18px 0; font-size:1.05em;">
+                    Las siguientes visualizaciones detallan cómo el churn se distribuye entre las 
+                    principales variables categóricas del servicio y del cliente.
+                </p>
+
+                <!-- Internet Service -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Internet Service</h4>
+                    <img src="Distribution_Internet_Service.png" class="img-premium">
+                </div>
+
+                <!-- Contract -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Contract</h4>
+                    <img src="Distribution_Contract.png" class="img-premium">
+                </div>
+
+                <!-- Online Security -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Online Security</h4>
+                    <img src="Distribution_Online_Security.png" class="img-premium">
+                </div>
+
+                <!-- Payment Method -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Payment Method</h4>
+                    <img src="Distribution_Payment_Method.png" class="img-premium">
+                </div>
+
+                <!-- Tech Support -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Tech Support</h4>
+                    <img src="Distribution_Tech_Support.png" class="img-premium">
+                </div>
+
+                <br><br>
+            </div>
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- ========== ACORDEÓN ITEM 2 · PROBABILIDADES ============= -->
+        <!-- ========================================================= -->
+
+        <div class="accordion-section">
+            <button class="accordion-header" onclick="toggleAccordion(this)">
+                📈 Probabilidades por categoría
+            </button>
+
+            <div class="accordion-content">
+
+                <p style="margin:18px 0; font-size:1.05em;">
+                    Estas visualizaciones sintetizan la probabilidad estimada de churn según categorías 
+                    relevantes del cliente y del servicio.
+                </p>
+
+                <!-- Contract -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Contract</h4>
+                    <img src="Probability_Contract.png" class="img-premium">
+                </div>
+
+                <!-- Internet Service -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Internet Service</h4>
+                    <img src="Probability_InternetService.png" class="img-premium">
+                </div>
+
+                <!-- Online Security -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Online Security</h4>
+                    <img src="Probability_OnlineSecurity.png" class="img-premium">
+                </div>
+
+                <!-- Payment Method -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Payment Method</h4>
+                    <img src="Probability_PaymentMethod.png" class="img-premium">
+                </div>
+
+                <!-- Tech Support -->
+                <div class="img-card">
+                    <h4 class="img-title">🔹 Tech Support</h4>
+                    <img src="Probability_TechSupport.png" class="img-premium">
+                </div>
+
+                <br><br>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- ========== ACORDEÓN ITEM 3 · VISUALIZACIONES 3D ========= -->
+        <!-- ========================================================= -->
+
+        <div class="accordion-section">
+            <button class="accordion-header" onclick="toggleAccordion(this)">
+                🧮 Variables cuantitativas (3D)
+            </button>
+
+            <div class="accordion-content">
+
+                <p style="margin:18px 0; font-size:1.05em;">
+                    Visualización tridimensional basada en una muestra estratificada del dataset. Permite 
+                    identificar comportamientos diferenciados según <strong>tenure</strong>, 
+                    <strong>MonthlyCharges</strong> y <strong>TotalCharges</strong>.
+                </p>
+
+                <iframe 
+                    src="3D_Sample_1.html"
+                    style="
+                        width:100%;
+                        height:620px;
+                        border:none;
+                        border-radius:14px;
+                        box-shadow:0 6px 20px rgba(0,0,0,0.20);
+                    ">
+                </iframe>
+
+                <br><br>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ======== ESTILO GLOBAL PARA TARJETAS DE IMAGEN ======== -->
+
+<style>
+    .img-card {
+        background:white;
+        padding:22px;
+        border-radius:16px;
+        box-shadow:0 8px 25px rgba(0,0,0,0.12);
+        margin-bottom:32px;
+    }
+    .img-title {
+        margin-bottom:12px;
+        font-size:1.15em;
+        font-weight:700;
+    }
+    .img-premium {
+        width:100%;
+        max-width:900px;
+        border-radius:14px;
+        display:block;
+        margin:0 auto;
+        box-shadow:0 6px 20px rgba(0,0,0,0.20);
+    }
+</style>
+
+
+<!-- ========================================================= -->
+<!-- ============= INSIGHTS PRE-MODELADO ===================== -->
+<!-- ========================================================= -->
+
+<div id="premodel" class="tab-content">
+    <div class="card">
+
+        <!-- Encabezado visual -->
+        <div class="phase-header">
+            <div class="phase-number">IPM</div>
+            <div class="phase-title" 
+                style="color:#111827; font-weight:900; letter-spacing:-0.5px;">
+                Insights Pre-Modelado
+            </div>
+            <div class="phase-desc" 
+                style="color:#6b7280; font-size:1.05em; margin-top:4px;">
+                Hallazgos ejecutivos clave antes del análisis predictivo
+            </div>
+        </div>
+
+        <!-- BLOQUE INTRODUCTORIO EXECUTIVE -->
+        <div style="
+            background:rgba(255,255,255,0.82);
+            padding:22px 28px;
+            border-radius:18px;
+            box-shadow:0 10px 28px rgba(0,0,0,0.12);
+            margin-bottom:35px;
+        ">
+            <h3 style="
+                margin-bottom:10px; 
+                font-size:1.35em; 
+                font-weight:800; 
+                color:#1f2937;
+            ">
+                🧭 Síntesis Ejecutiva
+            </h3>
+
+            <p style="line-height:1.75; font-size:1.05em; color:#374151;">
+                Antes de construir cualquier modelo, se identifican los patrones estructurales 
+                más determinantes del churn. Estos insights condensan los factores que deben guiar 
+                la estrategia de retención, el diseño de campañas y el enfoque del modelado.
+            </p>
+        </div>
+
+        <!-- TÍTULO DEL BLOQUE -->
+        <h3 style="
+            margin-top:10px; 
+            margin-bottom:22px; 
+            font-size:1.55em; 
+            font-weight:900;
+            letter-spacing:-0.4px;
+            color:#0f172a;
+            text-align:center;
+        ">
+            🔍 Insights clave antes de modelar
+        </h3>
+
+        <!-- GRID DE TARJETAS -->
+        <div style="
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(310px, 1fr));
+            gap:28px;
+            justify-items:center;
+        ">
+
+            <!-- TARJETA TEMPLATE (se repite para cada insight) -->
+            <!-- 🔹 CARD 1 -->
+            <div style="
+                width:100%;
+                padding:26px;
+                border-radius:24px;
+                background:linear-gradient(145deg, #918de0, #5f5bc7dd);
+                backdrop-filter:blur(10px);
+                box-shadow:0 14px 30px rgba(0,0,0,0.22);
+                transition:all 0.3s ease;
+                cursor:pointer;
+                color:white;
+            "
+            onmouseover="this.style.transform='translateY(-6px) scale(1.03)'"
+            onmouseout="this.style.transform='translateY(0) scale(1)'">
+
+                <div style="font-size:1.9em; margin-bottom:8px;">💠</div>
+                <h4 style="font-size:1.28em; margin-bottom:10px; font-weight:700;">
+                    Clientes con fibra óptica
+                </h4>
+                <p style="line-height:1.65; font-size:1.06em;">
+                    Los usuarios con <strong>Internet de fibra óptica</strong> presentan el nivel más alto de churn,
+                    posiblemente debido a expectativas de servicio más elevadas y menor tolerancia a fallos.
+                </p>
+            </div>
+
+            <!-- 🔹 CARD 2 -->
+            <div style="
+                width:100%;
+                padding:26px;
+                border-radius:24px;
+                background:linear-gradient(145deg, #e7795a, #dc502a);
+                backdrop-filter:blur(10px);
+                box-shadow:0 14px 30px rgba(0,0,0,0.22);
+                transition:all 0.3s ease;
+                cursor:pointer;
+                color:white;
+            "
+            onmouseover="this.style.transform='translateY(-6px) scale(1.03)'"
+            onmouseout="this.style.transform='translateY(0) scale(1)'">
+
+                <div style="font-size:1.9em; margin-bottom:8px;">📉</div>
+                <h4 style="font-size:1.28em; margin-bottom:10px; font-weight:700;">
+                    Contrato mensual = alto riesgo
+                </h4>
+                <p style="line-height:1.65; font-size:1.06em;">
+                    Los clientes con <strong>contrato Month-to-Month</strong> concentran el mayor riesgo,
+                    dada la baja fricción para cancelar el servicio.
+                </p>
+            </div>
+
+            <!-- 🔹 CARD 3 -->
+            <div style="
+                width:100%;
+                padding:26px;
+                border-radius:24px;
+                background:linear-gradient(145deg, #14b8a6cc, #0f766edd);
+                backdrop-filter:blur(10px);
+                box-shadow:0 14px 30px rgba(0,0,0,0.22);
+                transition:all 0.3s ease;
+                cursor:pointer;
+                color:white;
+            "
+            onmouseover="this.style.transform='translateY(-6px) scale(1.03)'"
+            onmouseout="this.style.transform='translateY(0) scale(1)'">
+
+                <div style="font-size:1.9em; margin-bottom:8px;">🛡️</div>
+                <h4 style="font-size:1.28em; margin-bottom:10px; font-weight:700;">
+                    Soporte técnico protege
+                </h4>
+                <p style="line-height:1.65; font-size:1.06em;">
+                    Los clientes con <strong>Tech Support</strong> o <strong>Online Security</strong>
+                    muestran una probabilidad significativamente menor de desertar.
+                </p>
+            </div>
+
+            <!-- 🔹 CARD 4 -->
+            <div style="
+                width:100%;
+                padding:26px;
+                border-radius:24px;
+                background:linear-gradient(145deg, #afd6ea, #7ac5e0dd);
+                backdrop-filter:blur(10px);
+                box-shadow:0 14px 30px rgba(0,0,0,0.22);
+                transition:all 0.3s ease;
+                cursor:pointer;
+                color:white;
+            "
+            onmouseover="this.style.transform='translateY(-6px) scale(1.03)'"
+            onmouseout="this.style.transform='translateY(0) scale(1)'">
+
+                <div style="font-size:1.9em; margin-bottom:8px;">💳</div>
+                <h4 style="font-size:1.28em; margin-bottom:10px; font-weight:700;">
+                    Pago con cheque electrónico
+                </h4>
+                <p style="line-height:1.65; font-size:1.06em;">
+                    El método de pago <strong>Electronic Check</strong> es el que mayor churn presenta,
+                    convirtiéndose en un indicador táctico clave.
+                </p>
+            </div>
+
+            <!-- 🔹 CARD 5 -->
+            <div style="
+                width:100%;
+                padding:26px;
+                border-radius:24px;
+                background:linear-gradient(145deg, #b179e5, #6b21a8dd);
+                backdrop-filter:blur(10px);
+                box-shadow:0 14px 30px rgba(0,0,0,0.22);
+                transition:all 0.3s ease;
+                cursor:pointer;
+                color:white;
+            "
+            onmouseover="this.style.transform='translateY(-6px) scale(1.03)'"
+            onmouseout="this.style.transform='translateY(0) scale(1)'">
+
+                <div style="font-size:1.9em; margin-bottom:8px;">📈</div>
+                <h4 style="font-size:1.28em; margin-bottom:10px; font-weight:700;">
+                    Nuevos + cargos elevados
+                </h4>
+                <p style="line-height:1.65; font-size:1.06em;">
+                    Clientes <strong>nuevos</strong> con <strong>altos MonthlyCharges</strong>
+                    conforman el segmento de riesgo más crítico previo al modelado.
+                </p>
+            </div>
+
+        </div> <!-- cierre grid -->
+
+    </div> <!-- cierre card -->
+</div> <!-- cierre tab-content -->
+
+
+
+<!-- ========================================================= -->
+<!-- ===================== FASE IV =========================== -->
+<!-- ========================================================= -->
+
+<div id="fase4" class="tab-content">
+    <div class="card">
+
+        <!-- Encabezado visual -->
+        <div class="phase-header">
+            <div class="phase-number">04</div>
+            <div class="phase-title">Modelado</div>
+            <div class="phase-desc">Construcción y análisis del modelo predictivo</div>
+        </div>
+
+        <!-- BLOQUE 1 · Descripción ejecutiva -->
+        <div style="
+            background:rgba(255,255,255,0.78);
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.12);
+            margin-bottom:38px;
+            transition:0.25s;
+        ">
+            <h3 style="margin-bottom:14px; font-size:1.4em; font-weight:750;">📘 Enfoque de Modelado</h3>
+            <p style="font-size:1.07em; line-height:1.8;">
+                Se implementó un modelo de <strong>Regresión Logística</strong>, una técnica ampliamente utilizada 
+                en problemas de clasificación binaria como el análisis de churn. Su principal ventaja radica en su 
+                interpretabilidad: permite estimar el efecto marginal de cada variable sobre la probabilidad de 
+                abandono del cliente.
+                <br><br>
+                A continuación se presenta el gráfico de coeficientes, el cual resume visualmente el impacto relativo 
+                de cada predictor después de estandarizar y preparar el dataset.
+            </p>
+        </div>
+
+        <!-- BLOQUE 2 · Gráfico de Coeficientes -->
+        <div style="
+            background:white;
+            padding:26px;
+            border-radius:20px;
+            box-shadow:0 10px 28px rgba(0,0,0,0.15);
+            margin-bottom:45px;
+            transition:0.25s;
+        ">
+            <h3 style="
+                margin-bottom:18px; 
+                font-size:1.38em; 
+                font-weight:800;
+                letter-spacing:0.3px;
+            ">
+                📊 Coeficientes del Modelo de Regresión Logística
+            </h3>
+
+            <img src="Coefficients.png"
+                alt="Coeficientes del modelo de regresión logística"
+                style="
+                    width:100%;
+                    max-width:960px;
+                    display:block;
+                    margin:0 auto;
+                    border-radius:14px;
+                    box-shadow:0 8px 28px rgba(0,0,0,0.22);
+                ">
+
+            <p style="margin-top:18px; line-height:1.75; font-size:1.07em;">
+                El gráfico muestra la contribución de cada variable al riesgo de churn. Valores 
+                <strong>positivos</strong> aumentan la probabilidad de abandono, mientras que valores 
+                <strong>negativos</strong> actúan como factores de retención.
+            </p>
+        </div>
+
+        <!-- BLOQUE 3 · Insights Ejecutivos Premium -->
+        <h3 style="
+            margin-top:10px; 
+            margin-bottom:22px; 
+            font-size:1.48em; 
+            font-weight:850;
+        ">
+            💡 Insights Ejecutivos del Modelo
+        </h3>
+
+        <div style="
+            display:flex;
+            flex-wrap:wrap;
+            gap:28px;
+            justify-content:center;
+            margin-top:10px;
+        ">
+
+            <!-- INSIGHT 1 -->
+            <div style="
+                width:330px;
+                padding:26px;
+                border-radius:22px;
+                background:linear-gradient(135deg, rgba(255,120,120,0.58), rgba(175,35,35,0.78));
+                box-shadow:0 12px 30px rgba(0,0,0,0.25);
+                color:white;
+                backdrop-filter:blur(7px);
+                transition:0.25s;
+                cursor:pointer;
+            "
+            onmouseover="this.style.transform='scale(1.05)'"
+            onmouseout="this.style.transform='scale(1)'">
+                <h4 style="font-size:1.27em; font-weight:750; margin-bottom:10px;">🔥 Drivers más críticos</h4>
+                <p style="line-height:1.65; font-size:1.07em;">
+                    Variables como <strong>Contract Month-to-Month</strong>, 
+                    <strong>MonthlyCharges</strong> y <strong>Internet Fiber Optic</strong>
+                    exhiben los coeficientes positivos más altos, indicando un riesgo significativo de abandono.
+                </p>
+            </div>
+
+            <!-- INSIGHT 2 -->
+            <div style="
+                width:330px;
+                padding:26px;
+                border-radius:22px;
+                background:linear-gradient(135deg, rgba(85,165,255,0.58), rgba(35,75,160,0.78));
+                box-shadow:0 12px 30px rgba(0,0,0,0.25);
+                color:white;
+                backdrop-filter:blur(7px);
+                transition:0.25s;
+                cursor:pointer;
+            "
+            onmouseover="this.style.transform='scale(1.05)'"
+            onmouseout="this.style.transform='scale(1)'">
+                <h4 style="font-size:1.27em; font-weight:750; margin-bottom:10px;">🔧 Factores que reducen churn</h4>
+                <p style="line-height:1.65; font-size:1.07em;">
+                    Variables como <strong>tenure</strong>, 
+                    <strong>OnlineSecurity</strong> y <strong>TechSupport</strong> 
+                    presentan coeficientes negativos, consolidándose como mecanismos clave de retención.
+                </p>
+            </div>
+
+            <!-- INSIGHT 3 -->
+            <div style="
+                width:330px;
+                padding:26px;
+                border-radius:22px;
+                background:linear-gradient(135deg, rgba(145,70,255,0.58), rgba(80,25,150,0.78));
+                box-shadow:0 12px 30px rgba(0,0,0,0.25);
+                color:white;
+                backdrop-filter:blur(7px);
+                transition:0.25s;
+                cursor:pointer;
+            "
+            onmouseover="this.style.transform='scale(1.05)'"
+            onmouseout="this.style.transform='scale(1)'">
+                <h4 style="font-size:1.27em; font-weight:750; margin-bottom:10px;">📈 Perfil del cliente en riesgo</h4>
+                <p style="line-height:1.65; font-size:1.07em;">
+                    El modelo perfila al cliente en mayor riesgo como aquel con 
+                    <strong>bajo tenure</strong>, 
+                    <strong>cargos mensuales elevados</strong>, 
+                    <strong>sin soporte técnico</strong> y 
+                    bajo un <strong>contrato mensual</strong>.
+                </p>
+            </div>
+
+        </div> <!-- cierre tarjetas -->
+    </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- ===================== FASE V ============================ -->
+<!-- ========================================================= -->
+
+<div id="fase5" class="tab-content">
+    <div class="card">
+
+        <!-- Encabezado visual -->
+        <div class="phase-header">
+            <div class="phase-number">05</div>
+            <div class="phase-title">Evaluación</div>
+            <div class="phase-desc">Assessment & Executive Validation</div>
+        </div>
+
+        <!-- BLOQUE 1 · Rol de la evaluación -->
+        <div style="
+            background:rgba(255,255,255,0.78);
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 8px 22px rgba(0,0,0,0.12);
+            margin-bottom:34px;
+        ">
+            <h3 style="margin-bottom:12px; font-size:1.35em; font-weight:750;">📘 Rol estratégico de la evaluación</h3>
+            <p style="font-size:1.05em; line-height:1.78;">
+                En contextos ejecutivos, evaluar un modelo de clasificación no implica solo medir 
+                su precisión, sino entender <strong>cómo</strong> y <strong>dónde</strong> se equivoca, 
+                y si dichos errores son tolerables para la estrategia comercial.  
+                En churn, la prioridad suele centrarse en <strong>maximizar el recall</strong>: 
+                identificar la mayor cantidad posible de clientes que están próximos a desertar, 
+                incluso a costa de aumentar los falsos positivos.  
+                <br><br>
+                A continuación se presentan los principales entregables de evaluación del 
+                <strong>modelo de Regresión Logística</strong>.
+            </p>
+        </div>
+
+        <!-- BLOQUE 2 · Matriz de confusión -->
+        <div class="highlight-box" style="margin-bottom:26px; border-left-color:var(--accent);">
+            <h3 style="font-size:1.27em; font-weight:750;">🧊 Matriz de confusión · Performance operativo</h3>
+            <p style="line-height:1.65; margin-top:6px;">
+                Permite visualizar la distribución de aciertos y errores entre módulos de retención 
+                (No Churn) y abandono (Churn). Es la base para definir estrategias de intervención 
+                orientadas a impacto comercial.
+            </p>
+        </div>
+
+        <div style="
+            background:white;
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 10px 26px rgba(0,0,0,0.12);
+            margin-bottom:38px;
+        ">
+            <img src="CMatrixV1.png"
+                alt="Matriz de Confusión - Regresión Logística"
+                style="
+                    width:100%;
+                    max-width:620px;
+                    border-radius:14px;
+                    display:block;
+                    margin:0 auto 16px;
+                    box-shadow:0 7px 22px rgba(0,0,0,0.20);
+                ">
+            <ul style="line-height:1.72; margin-left:20px; font-size:0.97em;">
+                <li>Fuerte capacidad para identificar correctamente a los clientes que <strong>no desertan</strong>.</li>
+                <li>Detección razonable de churners, con falsos negativos aún presentes.</li>
+                <li>Permite activar discusiones sobre <strong>costos de error</strong> y calibración del umbral.</li>
+            </ul>
+        </div>
+
+        <!-- BLOQUE 3 · Curva ROC -->
+        <div class="highlight-box" style="margin-bottom:26px; border-left-color:var(--accent3);">
+            <h3 style="font-size:1.27em; font-weight:750;">📉 Curva ROC & AUC</h3>
+            <p style="line-height:1.65; margin-top:6px;">
+                La ROC sintetiza la capacidad del modelo para discriminar entre clientes que abandonan 
+                vs. aquellos que permanecen, a través de todos los umbrales posibles.
+            </p>
+        </div>
+
+        <div style="
+            background:white;
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 10px 26px rgba(0,0,0,0.12);
+            margin-bottom:38px;
+        ">
+            <img src="ROC_Curve.png"
+                alt="Curva ROC - Regresión Logística"
+                style="
+                    width:100%;
+                    max-width:440px;
+                    border-radius:14px;
+                    display:block;
+                    margin:0 auto 16px;
+                    box-shadow:0 7px 22px rgba(0,0,0,0.18);
+                ">
+
+            <p style="line-height:1.7; font-size:0.97em;">
+                El modelo obtiene un <strong>AUC ≈ 0.84</strong>, lo que indica una capacidad robusta 
+                de discriminación.  
+                Desde una perspectiva ejecutiva, esto implica una herramienta confiable para 
+                <strong>priorizar clientes</strong> cuando los recursos de retención son limitados.
+            </p>
+        </div>
+
+        <!-- BLOQUE 4 · Curva Precision-Recall -->
+        <div class="highlight-box" style="margin-bottom:26px; border-left-color:var(--accent4);">
+            <h3 style="font-size:1.27em; font-weight:750;">🎯 Curva Precision–Recall</h3>
+            <p style="line-height:1.65; margin-top:6px;">
+                En problemas desbalanceados (como churn), esta curva ofrece una lectura más sensible 
+                que la ROC para evaluar la calidad real de las alertas.
+            </p>
+        </div>
+
+        <div style="
+            background:white;
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 10px 26px rgba(0,0,0,0.12);
+            margin-bottom:38px;
+        ">
+            <img src="Precision-Recall.png"
+                alt="Curva Precision–Recall"
+                style="
+                    width:100%;
+                    max-width:820px;
+                    border-radius:14px;
+                    display:block;
+                    margin:0 auto 16px;
+                    box-shadow:0 7px 22px rgba(0,0,0,0.18);
+                ">
+
+            <p style="line-height:1.7; font-size:0.97em;">
+                La curva muestra que al aumentar el recall (capturar más churners), la precisión disminuye 
+                al incluir más falsos positivos.  
+                El modelo mantiene una precisión competitiva para niveles medios de recall, 
+                lo que lo hace adecuado para <strong>campañas focalizadas</strong>.
+            </p>
+        </div>
+
+        <!-- BLOQUE 5 · Umbral, Precision y Recall -->
+        <div class="highlight-box" style="margin-bottom:26px; border-left-color:var(--accent2);">
+            <h3 style="font-size:1.27em; font-weight:750;">⚙️ Curva Precision-Recall + Umbral</h3>
+            <p style="line-height:1.65; margin-top:6px;">
+                Ajustar el umbral de clasificación permite alinear el comportamiento del modelo 
+                con el apetito de riesgo y el retorno esperado de las campañas.
+            </p>
+        </div>
+
+        <div style="
+            background:white;
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 10px 26px rgba(0,0,0,0.12);
+            margin-bottom:38px;
+        ">
+            <img src="Recall-Precision-Threshold.png"
+                alt="Curva Precision–Recall + Threshold"
+                style="
+                    width:100%;
+                    max-width:820px;
+                    border-radius:14px;
+                    display:block;
+                    margin:0 auto 16px;
+                    box-shadow:0 7px 22px rgba(0,0,0,0.18);
+                ">
+
+            <p style="line-height:1.7; font-size:0.97em;">
+                A medida que sube el umbral, el modelo se vuelve más restrictivo:  
+                <strong>más precisión, menos recall</strong>.  
+                La selección óptima debe ser conjunta entre áreas de <strong>riesgo, comercial y data science</strong>.
+            </p>
+        </div>
+
+        <!-- BLOQUE ADICIONAL · Umbral 0.35 -->
+        <div class="highlight-box" style="margin-top:32px; margin-bottom:26px; border-left-color:var(--success);">
+            <h3 style="font-size:1.27em; font-weight:750;">🔎 Matriz de confusión con Umbral 0.35 · Enfoque en Recall</h3>
+            <p style="line-height:1.65; margin-top:6px;">
+                Reducir el umbral aumenta la sensibilidad del modelo y maximiza la detección de churners.  
+                Ideal para escenarios donde perder un cliente es más costoso que intervenir uno que estaba estable.
+            </p>
+        </div>
+
+        <div style="
+            background:white;
+            padding:26px;
+            border-radius:18px;
+            box-shadow:0 10px 26px rgba(0,0,0,0.12);
+        ">
+            <img src="CMatrixV2.png"
+                alt="Matriz de Confusión - Umbral 0.35"
+                style="
+                    width:100%;
+                    max-width:620px;
+                    border-radius:14px;
+                    display:block;
+                    margin:0 auto 18px;
+                    box-shadow:0 7px 22px rgba(0,0,0,0.18);
+                ">
+
+            <p style="line-height:1.7; font-size:0.97em;">
+                Con un umbral más bajo, el modelo identifica <strong>403 churners reales</strong>, 
+                aumentando la cobertura frente al umbral estándar.  
+                El costo: <strong>335 falsos positivos</strong> adicionales, que deben ser gestionados 
+                vía campañas eficientes.
+            </p>
+
+            <ul style="line-height:1.7; margin-left:20px; font-size:0.95em; margin-top:10px;">
+                <li>✔ Mayor cobertura de churners: minimiza pérdidas silenciosas.</li>
+                <li>❗ Más falsos positivos: incrementa la carga de contactabilidad.</li>
+                <li>💼 Relevancia ejecutiva: útil en segmentos premium y cuentas estratégicas.</li>
+                <li>🎯 Recomendación: emplear este umbral cuando el ROI de retención es alto.</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+    <!-- ========================================================= -->
+    <!-- ===================== Nota de pie ============================ -->
+    <!-- ========================================================= -->
+
+
+    <footer style="
+        color:white;
+        text-align:center;
+        background:rgba(255,255,255,0.12);
+        backdrop-filter:blur(8px);
+        border-radius:20px;
+        padding:40px 20px;
+        margin-top:55px;
+        box-shadow:0 -10px 35px rgba(0,0,0,0.15);
+    ">
+        <h3 style="
+            font-weight:800;
+            color:white;
+            letter-spacing:0.3px;
+            margin-bottom:8px;
+        ">
+            CRISP-DM aplicado a Telecomunicaciones
+        </h3>
+
+        <p style="
+            color:white;
+            margin-top:10px;
+            font-weight:700;
+            font-size:0.95em;
+            opacity:0.95;
+            line-height:1.5;
+        ">
+            Proyecto académico · Ciencia de Datos  
+            © Juan Miguel Rodríguez Trujillo
+        </p>
+    </footer>
+
+
+</div>
+
+<script>
+function showTab(tabName) {
+    const contents = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-btn');
+
+    contents.forEach(t => t.classList.remove('active'));
+    buttons.forEach(b => b.classList.remove('active'));
+
+    const tab = document.getElementById(tabName);
+    if (tab) {
+        tab.classList.add('active');
+    }
+
+    // event.target puede ser undefined en algunos contextos, así que validamos
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    document.querySelectorAll('.card').forEach(card => {
+        observer.observe(card);
+    });
+});
+</script>
+
+</body>
+</html>
+
+
